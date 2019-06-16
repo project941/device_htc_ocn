@@ -34,10 +34,11 @@ import android.view.WindowManager;
 
 import java.util.Iterator;
 
+import slim.utils.FileUtils;
 import slim.action.Action;
 import slim.action.ActionConstants;
 
-import com.slim.device.settings.ScreenOffGesture;
+import com.slim.device.settings.Gesture;
 
 public class SensorService extends Service implements SensorEventListener {
 
@@ -54,6 +55,18 @@ public class SensorService extends Service implements SensorEventListener {
     private static final int SWIPE_LEFT = 5;
     private static final int CAMERA = 6;
 
+    private static final String CONTROL_PATH =
+            "/sys/class/htc_sensorhub/sensor_hub/gesture_motion";
+
+    /* Sensor gesture definition used to instantiate GestureMotionSensor, externally usable */
+    /* These values also correspond to kernel driver values, so don't change them */
+    public static final int SENSOR_GESTURE_SWIPE_UP = 0x4;
+    public static final int SENSOR_GESTURE_SWIPE_DOWN = 0x8;
+    public static final int SENSOR_GESTURE_SWIPE_LEFT = 0x10;
+    public static final int SENSOR_GESTURE_SWIPE_RIGHT = 0x20;
+    public static final int SENSOR_GESTURE_CAMERA = 0x40;
+    public static final int SENSOR_GESTURE_DOUBLE_TAP = 0x8000;
+    public static final int SENSOR_GESTURE_ALL = 0x807C;
 
     private Context mContext;
     private SharedPreferences mPrefs;
@@ -67,7 +80,7 @@ public class SensorService extends Service implements SensorEventListener {
         super.onCreate();
 
         mContext = getApplicationContext();
-        mPrefs = getSharedPreferences(ScreenOffGesture.GESTURE_SETTINGS, Activity.MODE_PRIVATE);
+        mPrefs = getSharedPreferences(Gesture.GESTURE_SETTINGS, Activity.MODE_PRIVATE);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
@@ -79,6 +92,9 @@ public class SensorService extends Service implements SensorEventListener {
             if (sensor.getName().equals(HTC_GESTURES)) {
                 if (DEBUG) Log.d(TAG, "found gesture sensor");
                 mSensor = sensor;
+                if (!FileUtils.writeLine(CONTROL_PATH, Integer.toHexString(SENSOR_GESTURE_ALL))) {
+                    Log.w(TAG, "Failed to write control path, unable to disable sensor");
+        }
             }
         }
         if (mSensor != null) {
@@ -118,27 +134,27 @@ public class SensorService extends Service implements SensorEventListener {
         String action = null;
         switch (gesture) {
             case DOUBLE_TAP:
-                action = mPrefs.getString(ScreenOffGesture.PREF_DOUBLE_TAP,
+                action = mPrefs.getString(Gesture.PREF_DOUBLE_TAP,
                         ActionConstants.ACTION_WAKE_DEVICE);
                 break;
             case SWIPE_UP:
-                action = mPrefs.getString(ScreenOffGesture.PREF_SWIPE_UP,
+                action = mPrefs.getString(Gesture.PREF_SWIPE_UP,
                         ActionConstants.ACTION_TORCH);
                 break;
             case SWIPE_DOWN:
-                action = mPrefs.getString(ScreenOffGesture.PREF_SWIPE_DOWN,
+                action = mPrefs.getString(Gesture.PREF_SWIPE_DOWN,
                         ActionConstants.ACTION_MEDIA_PLAY_PAUSE);
                 break;
             case SWIPE_LEFT:
-                action = mPrefs.getString(ScreenOffGesture.PREF_SWIPE_LEFT,
+                action = mPrefs.getString(Gesture.PREF_SWIPE_LEFT,
                         ActionConstants.ACTION_MEDIA_PREVIOUS);
                 break;
             case SWIPE_RIGHT:
-                action = mPrefs.getString(ScreenOffGesture.PREF_SWIPE_RIGHT,
+                action = mPrefs.getString(Gesture.PREF_SWIPE_RIGHT,
                         ActionConstants.ACTION_MEDIA_NEXT);
                 break;
             case CAMERA:
-                action = mPrefs.getString(ScreenOffGesture.PREF_CAMERA,
+                action = mPrefs.getString(Gesture.PREF_CAMERA,
                         ActionConstants.ACTION_CAMERA);
                 break;
         }

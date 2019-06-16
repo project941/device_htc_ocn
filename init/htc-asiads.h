@@ -33,7 +33,6 @@ static const char *htc_asiads_properties =
     "ro.product.model=MSM8998 for arm64\n"
     "ro.product.device=htc_ocndugl\n"
     "ro.build.product=htc_ocndugl\n"
-    "ro.build.fingerprint=htc/ocndugl_00400/htc_ocndugl:7.1.1/NMF26X/923215.4:user/release-keys\n"
     "persist.rild.nitz_plmn=\n"
     "persist.rild.nitz_long_ons_0=\n"
     "persist.rild.nitz_long_ons_1=\n"

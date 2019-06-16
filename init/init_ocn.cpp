@@ -30,10 +30,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <android-base/logging.h>
+#include <android-base/properties.h>
+
 #include "vendor_init.h"
 #include "property_service.h"
-#include "log.h"
-#include "util.h"
 
 /* Device specific properties */
 #include "htc-sprint.h"
@@ -42,7 +43,11 @@
 #include "htc-emeads.h"
 #include "htc-asiads.h"
 #include "htc-indiads.h"
+#include "htc-chinads.h"
 #include "htc-unlocked.h"
+
+using android::base::GetProperty;
+using android::init::property_set;
 
 static void load_properties(const char *original_data)
 {
@@ -50,7 +55,7 @@ static void load_properties(const char *original_data)
     char *key, *value, *eol, *sol, *tmp;
 
     if ((data = (char *) malloc(strlen(original_data)+1)) == NULL) {
-        ERROR("Out of memory!");
+        LOG(ERROR) << "Out of memory!" <<std::endl;
         return;
     }
 
@@ -89,14 +94,14 @@ void vendor_load_properties()
     std::string bootmid;
     std::string bootcid;
 
-    platform = property_get("ro.board.platform");
+    platform = GetProperty("ro.board.platform","");
     if (platform != ANDROID_TARGET)
         return;
 
-    bootmid = property_get("ro.boot.mid");
-    bootcid = property_get("ro.boot.cid");
+    bootmid = GetProperty("ro.boot.mid","");
+    bootcid = GetProperty("ro.boot.cid","");
 
-    INFO("Found bootcid %s, bootmid %s\n", bootcid.c_str(), bootmid.c_str());
+    LOG(INFO) << "Found bootcid " << bootcid << " bootmid " << bootmid << std::endl;
 
     if (bootmid == "2PZC10000" || bootmid == "2PZC50000") {
         if (is_variant_emea(bootcid)) {
@@ -108,13 +113,15 @@ void vendor_load_properties()
         } else if (is_variant_unlocked(bootcid)) {
            load_properties(htc_unlocked_properties);
         }
-    } else if (bootmid == "2PZC30000") {
+    } else if (bootmid == "2PZC30000" || bootmid == "2PZC50000") {
         if (is_variant_emeads(bootcid)) {
            load_properties(htc_emeads_properties);
         } else if (is_variant_asiads(bootcid)) {
            load_properties(htc_asiads_properties);
         } else if (is_variant_indiads(bootcid)) {
            load_properties(htc_indiads_properties);
+        } else if (is_variant_chinads(bootcid)) {
+           load_properties(htc_chinads_properties);
         }
     } else {
            load_properties(htc_emea_properties);
